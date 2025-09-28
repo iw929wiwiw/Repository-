@@ -155,7 +155,7 @@ end
 
 -- 🔄 Scan loop
 task.spawn(function()
-	while task.wait(0.1) do
+	while task.wait(0.05) do
 		for _, v in pairs(workspace:GetDescendants()) do
 			processGenerationLabel(v)
 		end
@@ -163,7 +163,7 @@ task.spawn(function()
 end)
 
 workspace.DescendantAdded:Connect(function(v)
-	task.delay(0.1, function()
+	task.delay(0.05, function()
 		processGenerationLabel(v)
 	end)
 end)
