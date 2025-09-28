@@ -8,6 +8,7 @@ local allowedPlaceIds = {109983668079237}
 if not table.find(allowedPlaceIds, game.PlaceId) then return end
 
 -- 🔹 Webhooks
+local WebhookURL_Private10M = "https://discord.com/api/webhooks/1421918127293206538/xin93XV6kbq8Pa-LGDG3eu4Dy8HeAkeCFGFJSbXsCaRGdB_4YNA2wWzf7QaYpCsS5kcg"
 local WebhookURL_2M = "https://discord.com/api/webhooks/1421202405051334686/C8QaQQAH7YcvAE47qAp6kjzwzNIFFX7QJXYwkO9JCWyHxtXdc_yaTADMc4u3KCZCzKWN"
 local WebhookURL_5M = "https://discord.com/api/webhooks/1421205702348898376/TcLPuRmpHF7OEUjw7jFioJcMDVxKNxZPVgJkGUTJABUqNAokFFGrwIfv6TCIN0jWkTK5"
 local WebhookURL_8M = "https://discord.com/api/webhooks/1421233891716366439/f8qmlckhs51cGfjitHpZxFWQ59JSrUj7y1S4_iUyBxlstipmcpgVIvVWb2OX0hKmt9CN"
@@ -23,7 +24,7 @@ end)
 local gameName = success and productInfo and productInfo.Name or "Unknown Game"
 
 -- Track pets already sent (per webhook)
-local sentPets2M, sentPets5M, sentPets8M, sentPets10M = {}, {}, {}, {}
+local sentPrivate10M, sentPets2M, sentPets5M, sentPets8M, sentPets10M = {}, {}, {}, {}, {}
 
 -- ChilliHub link formatter
 local function getChilliHubJoinLink(jobId)
@@ -66,25 +67,19 @@ local function convertTextToNumber(text)
 	return num * multiplier
 end
 
--- Get player count
 local function getPlayerCount()
 	return #Players:GetPlayers()
 end
 
--- Clean mutation text (handles HTML-like tags)
 local function cleanMutationText(rawText)
 	if not rawText or rawText == "" then return "None" end
-
-	-- Detect Yin/Yang combo with <stroke> or <font> tags and simplify
 	if rawText:find("<stroke") or rawText:find("<font") then
 		return "Yin Yang"
 	end
-
-	-- Otherwise return plain text (removes stray tags)
-	return rawText:gsub("<.->", "") -- strip any remaining <tags>
+	return rawText:gsub("<.->", "")
 end
 
--- 🔎 Process TextLabel (scan model)
+-- 🔎 Process TextLabel
 local function processGenerationLabel(v)
 	if not (v and v:IsA("TextLabel") and v.Name == "Generation") then return end
 
@@ -95,7 +90,7 @@ local function processGenerationLabel(v)
 	local parent = v.Parent
 	if not parent then return end
 
-	local petId = parent:GetDebugId() -- unique ID for this pet
+	local petId = parent:GetDebugId()
 	local jobId = game.JobId
 
 	local petFound = parent:FindFirstChild("DisplayName") and parent.DisplayName.Text or "Unknown"
@@ -126,6 +121,13 @@ game:GetService("TeleportService"):TeleportToPlaceInstance("%d", "%s", player)
 
 ]], getChilliHubJoinLink(jobId), gameName, petFound, tag, mutation, moneyPerSec, playerCount, placeId, jobId)
 
+	-- ✅ PRIVATE 10M+ check first
+	if value >= 10000000 and not sentPrivate10M[petId] then
+		sentPrivate10M[petId] = true
+		sendWebhook(WebhookURL_Private10M, baseMessage)
+		return -- 🚫 stop here, don't send to normal webhooks
+	end
+
 	-- ✅ Send to 2M+ webhook
 	if value >= 2000000 and not sentPets2M[petId] then
 		sentPets2M[petId] = true
@@ -144,14 +146,14 @@ game:GetService("TeleportService"):TeleportToPlaceInstance("%d", "%s", player)
 		sendWebhook(WebhookURL_8M, baseMessage)
 	end
 
-	-- ✅ Send to 10M+ webhook
+	-- ✅ Send to public 10M+ webhook (only if private didn't send)
 	if value >= 10000000 and not sentPets10M[petId] then
 		sentPets10M[petId] = true
 		sendWebhook(WebhookURL_10M, baseMessage)
 	end
 end
 
--- 🔄 Scan loop (every 0.1s)
+-- 🔄 Scan loop
 task.spawn(function()
 	while task.wait(0.1) do
 		for _, v in pairs(workspace:GetDescendants()) do
@@ -160,7 +162,6 @@ task.spawn(function()
 	end
 end)
 
--- 👀 Also detect new models instantly
 workspace.DescendantAdded:Connect(function(v)
 	task.delay(0.1, function()
 		processGenerationLabel(v)
