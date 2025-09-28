@@ -1,3 +1,5 @@
+
+
 repeat task.wait() until workspace:FindFirstChild("Plots")
 
 local HttpService = game:GetService("HttpService")
@@ -18,7 +20,7 @@ local req = (syn and syn.request) or (http and http.request) or http_request or 
 
 -- 🏷️ Get the actual game name
 local success, productInfo = pcall(function()
-    return MarketplaceService:GetProductInfo(placeId)
+return MarketplaceService:GetProductInfo(placeId)
 end)
 local gameName = success and productInfo and productInfo.Name or "Unknown Game"
 
@@ -27,83 +29,84 @@ local sentPets2M, sentPets5M, sentPets8M, sentPets10M = {}, {}, {}, {}
 
 -- ChilliHub link formatter
 local function getChilliHubJoinLink(jobId)
-    return string.format("https://chillihub1.github.io/chillihub-joiner/?placeId=%s&gameInstanceId=%s", tostring(placeId), tostring(jobId))
+return string.format("https://chillihub1.github.io/chillihub-joiner/?placeId=%s&gameInstanceId=%s", tostring(placeId), tostring(jobId))
 end
 
 -- Webhook sender
 local function sendWebhook(url, message)
-    local data = {["content"] = message}
-    local jsonData = HttpService:JSONEncode(data)
-    if req then
-        req({
-            Url = url,
-            Method = "POST",
-            Headers = {["Content-Type"] = "application/json"},
-            Body = jsonData
-        })
-    end
+local data = {["content"] = message}
+local jsonData = HttpService:JSONEncode(data)
+if req then
+req({
+Url = url,
+Method = "POST",
+Headers = {["Content-Type"] = "application/json"},
+Body = jsonData
+})
+end
 end
 
 -- Convert "$2M/s" → number
 local function convertTextToNumber(text)
-    if not text:find("/s") then return 0 end
-    text = text:gsub("%$", ""):gsub("/s", ""):gsub("%s+", "")
-    local multiplier = 1
-    if text:upper():find("K$") then
-        multiplier = 1e3
-        text = text:gsub("[Kk]$", "")
-    elseif text:upper():find("M$") then
-        multiplier = 1e6
-        text = text:gsub("[Mm]$", "")
-    elseif text:upper():find("B$") then
-        multiplier = 1e9
-        text = text:gsub("[Bb]$", "")
-    elseif text:upper():find("T$") then
-        multiplier = 1e12
-        text = text:gsub("[Tt]$", "")
-    end
-    local num = tonumber(text) or 0
-    return num * multiplier
+if not text:find("/s") then return 0 end
+text = text:gsub("%$", ""):gsub("/s", ""):gsub("%s+", "")
+local multiplier = 1
+if text:upper():find("K$") then
+multiplier = 1e3
+text = text:gsub("[Kk]$", "")
+elseif text:upper():find("M$") then
+multiplier = 1e6
+text = text:gsub("[Mm]$", "")
+elseif text:upper():find("B$") then
+multiplier = 1e9
+text = text:gsub("[Bb]$", "")
+elseif text:upper():find("T$") then
+multiplier = 1e12
+text = text:gsub("[Tt]$", "")
+end
+local num = tonumber(text) or 0
+return num * multiplier
 end
 
 -- Get player count
 local function getPlayerCount()
-    return #Players:GetPlayers()
+return #Players:GetPlayers()
 end
 
 -- Clean mutation text (handles HTML-like tags)
 local function cleanMutationText(rawText)
-    if not rawText or rawText == "" then return "None" end
-    if rawText:find("<stroke") or rawText:find("<font") then  
-        return "Yin Yang"  
-    end  
-    return rawText:gsub("<.->", "")
+if not rawText or rawText == "" then return "None" end
+if rawText:find("<stroke") or rawText:find("<font") then
+return "Yin Yang"
+end
+return rawText:gsub("<.->", "")
 end
 
 -- 🔎 Process Generation TextLabel
 local function processGenerationLabel(v)
-    if not (v and v:IsA("TextLabel") and v.Name == "Generation") then return end
+if not (v and v:IsA("TextLabel") and v.Name == "Generation") then return end
 
-    local value = convertTextToNumber(v.Text)
-    local playerCount = getPlayerCount()
-    if playerCount < 6 or playerCount > 8 then return end
+local value = convertTextToNumber(v.Text)  
+local playerCount = getPlayerCount()  
+if playerCount < 6 or playerCount > 8 then return end  
 
-    local parent = v.Parent
-    if not parent then return end
+local parent = v.Parent  
+if not parent then return end  
 
-    local petId = parent:GetDebugId()
-    local petFound = parent:FindFirstChild("DisplayName") and parent.DisplayName.Text or "Unknown"
-    local moneyPerSec = v.Text
-    local tag = parent:FindFirstChild("Rarity") and parent.Rarity.Text or "Unknown"
+local petId = parent:GetDebugId()  
+local petFound = parent:FindFirstChild("DisplayName") and parent.DisplayName.Text or "Unknown"  
+local moneyPerSec = v.Text  
+local tag = parent:FindFirstChild("Rarity") and parent.Rarity.Text or "Unknown"  
 
-    local mutation = "None"
-    local mutationTag = parent:FindFirstChild("Mutation")
-    if mutationTag and mutationTag.Visible then
-        mutation = cleanMutationText(mutationTag.Text)
-    end
+local mutation = "None"  
+local mutationTag = parent:FindFirstChild("Mutation")  
+if mutationTag and mutationTag.Visible then  
+    mutation = cleanMutationText(mutationTag.Text)  
+end  
 
-    local jobId = game.JobId
-    local baseMessage = string.format([[
+local jobId = game.JobId  
+local baseMessage = string.format([[
+
 -- %s
 
 ---- Secret Is Found ✅ ----
@@ -119,53 +122,53 @@ local player = game.Players:GetPlayers()[1]
 game:GetService("TeleportService"):TeleportToPlaceInstance("%d", "%s", player)
 ]], getChilliHubJoinLink(jobId), gameName, petFound, tag, mutation, moneyPerSec, playerCount, placeId, jobId)
 
-    -- ✅ Send webhooks
-    if value >= 2000000 and not sentPets2M[petId] then  
-        sentPets2M[petId] = true  
-        sendWebhook(WebhookURL_2M, baseMessage)  
-    end  
-    if value >= 5000000 and not sentPets5M[petId] then  
-        sentPets5M[petId] = true  
-        sendWebhook(WebhookURL_5M, baseMessage)  
-    end  
-    if value >= 8000000 and not sentPets8M[petId] then  
-        sentPets8M[petId] = true  
-        sendWebhook(WebhookURL_8M, baseMessage)  
-    end  
-    if value >= 10000000 and not sentPets10M[petId] then  
-        sentPets10M[petId] = true  
-        sendWebhook(WebhookURL_10M, baseMessage)  
-    end
+-- ✅ Send webhooks  
+if value >= 2000000 and not sentPets2M[petId] then    
+    sentPets2M[petId] = true    
+    sendWebhook(WebhookURL_2M, baseMessage)    
+end    
+if value >= 5000000 and not sentPets5M[petId] then    
+    sentPets5M[petId] = true    
+    sendWebhook(WebhookURL_5M, baseMessage)    
+end    
+if value >= 8000000 and not sentPets8M[petId] then    
+    sentPets8M[petId] = true    
+    sendWebhook(WebhookURL_8M, baseMessage)    
+end    
+if value >= 10000000 and not sentPets10M[petId] then    
+    sentPets10M[petId] = true    
+    sendWebhook(WebhookURL_10M, baseMessage)    
+end
+
 end
 
 -- 🔄 Optimized Scan Loop
 local scannedPets = {}
 local function safeProcess(v)
-    if not v or not v.Parent then return end
-    local petId = v.Parent:GetDebugId()
-    if scannedPets[petId] then return end
-    scannedPets[petId] = true
-    processGenerationLabel(v)
+if not v or not v.Parent then return end
+local petId = v.Parent:GetDebugId()
+if scannedPets[petId] then return end
+scannedPets[petId] = true
+processGenerationLabel(v)
 end
 
 task.spawn(function()
-    while task.wait(0.1) do
-        local plots = workspace:FindFirstChild("Plots")
-        if not plots then continue end
-        for _, plot in pairs(plots:GetChildren()) do
-            local genLabel = plot:FindFirstChild("Generation")
-            if genLabel then
-                safeProcess(genLabel)
-            end
-        end
-    end
+while task.wait(0.1) do -- slightly longer interval to reduce CPU
+local plots = workspace:FindFirstChild("Plots")
+if not plots then continue end
+for _, plot in pairs(plots:GetDescendants()) do
+if plot:IsA("TextLabel") and plot.Name == "Generation" then
+safeProcess(plot)
+end
+end
+end
 end)
 
 -- 👀 Detect new models instantly (optimized)
 workspace.DescendantAdded:Connect(function(v)
-    if v:IsA("TextLabel") and v.Name == "Generation" then
-        task.delay(0.05, function()
-            safeProcess(v)
-        end)
-    end
+if v:IsA("TextLabel") and v.Name == "Generation" then
+task.delay(0.05, function()
+safeProcess(v)
+end)
+end
 end)
