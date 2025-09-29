@@ -1,5 +1,3 @@
-
-
 repeat task.wait() until workspace:FindFirstChild("Plots")
 
 local HttpService = game:GetService("HttpService")
@@ -153,12 +151,13 @@ processGenerationLabel(v)
 end
 
 task.spawn(function()
-while task.wait(0.1) do -- slightly longer interval to reduce CPU
+while task.wait(0.3) do
 local plots = workspace:FindFirstChild("Plots")
 if not plots then continue end
-for _, plot in pairs(plots:GetDescendants()) do
-if plot:IsA("TextLabel") and plot.Name == "Generation" then
-safeProcess(plot)
+for _, plot in pairs(plots:GetChildren()) do
+local genLabel = plot:FindFirstChild("Generation")
+if genLabel then
+safeProcess(genLabel)
 end
 end
 end
@@ -172,3 +171,5 @@ safeProcess(v)
 end)
 end
 end)
+
+
