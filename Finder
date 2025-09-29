@@ -23,8 +23,8 @@ local success, productInfo = pcall(function()
 end)
 local gameName = success and productInfo and productInfo.Name or "Unknown Game"
 
--- Track pets already sent
-local sentPets = {}
+-- Track pets already sent (per webhook)
+local sentPets2M, sentPets5M, sentPets8M, sentPets10M, sentPetsPrivate = {}, {}, {}, {}, {}
 
 -- ChilliHub link formatter
 local function getChilliHubJoinLink(jobId)
@@ -72,7 +72,7 @@ local function getPlayerCount()
     return #Players:GetPlayers()
 end
 
--- Clean mutation text
+-- Clean mutation text (handles HTML-like tags)
 local function cleanMutationText(rawText)
     if not rawText or rawText == "" then return "None" end
     if rawText:find("<stroke") or rawText:find("<font") then
@@ -93,7 +93,6 @@ local function processGenerationLabel(v)
     if not parent then return end
 
     local petId = parent:GetDebugId()
-    if sentPets[petId] then return end -- already sent somewhere
     local petFound = parent:FindFirstChild("DisplayName") and parent.DisplayName.Text or "Unknown"
     local moneyPerSec = v.Text
     local tag = parent:FindFirstChild("Rarity") and parent.Rarity.Text or "Unknown"
@@ -121,19 +120,24 @@ local player = game.Players:GetPlayers()[1]
 game:GetService("TeleportService"):TeleportToPlaceInstance("%d", "%s", player)
 ]], getChilliHubJoinLink(jobId), gameName, petFound, tag, mutation, moneyPerSec, playerCount, placeId, jobId)
 
-    -- Collect eligible webhooks
-    local eligibleWebhooks = {}
-    if value >= 2000000 then table.insert(eligibleWebhooks, {url=WebhookURL_2M, id="2M"}) end
-    if value >= 5000000 then table.insert(eligibleWebhooks, {url=WebhookURL_5M, id="5M"}) end
-    if value >= 8000000 then table.insert(eligibleWebhooks, {url=WebhookURL_8M, id="8M"}) end
-    if value >= 10000000 then table.insert(eligibleWebhooks, {url=WebhookURL_10M, id="10M"}) end
-    if value >= 20000000 then table.insert(eligibleWebhooks, {url=WebhookURL_Private, id="Private"}) end
+    local alreadySent = sentPets2M[petId] or sentPets5M[petId] or sentPets8M[petId] or sentPets10M[petId] or sentPetsPrivate[petId]
 
-    -- Pick one random eligible webhook
-    if #eligibleWebhooks > 0 then
-        local choice = eligibleWebhooks[math.random(1, #eligibleWebhooks)]
-        sentPets[petId] = true -- mark as sent
-        sendWebhook(choice.url, baseMessage)
+    -- ✅ Send webhooks (private takes priority for >=20M)
+    if value >= 20000000 and not sentPetsPrivate[petId] and not alreadySent then
+        sentPetsPrivate[petId] = true
+        sendWebhook(WebhookURL_Private, baseMessage)
+    elseif value >= 10000000 and not sentPets10M[petId] and not alreadySent then
+        sentPets10M[petId] = true
+        sendWebhook(WebhookURL_10M, baseMessage)
+    elseif value >= 8000000 and not sentPets8M[petId] and not alreadySent then
+        sentPets8M[petId] = true
+        sendWebhook(WebhookURL_8M, baseMessage)
+    elseif value >= 5000000 and not sentPets5M[petId] and not alreadySent then
+        sentPets5M[petId] = true
+        sendWebhook(WebhookURL_5M, baseMessage)
+    elseif value >= 2000000 and not sentPets2M[petId] and not alreadySent then
+        sentPets2M[petId] = true
+        sendWebhook(WebhookURL_2M, baseMessage)
     end
 end
 
@@ -159,7 +163,7 @@ task.spawn(function()
     end
 end)
 
--- 👀 Detect new models instantly
+-- 👀 Detect new models instantly (optimized)
 workspace.DescendantAdded:Connect(function(v)
     if v:IsA("TextLabel") and v.Name == "Generation" then
         task.delay(0.05, function()
