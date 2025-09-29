@@ -84,25 +84,25 @@ end
 local function processGenerationLabel(v)
 if not (v and v:IsA("TextLabel") and v.Name == "Generation") then return end
 
-local value = convertTextToNumber(v.Text)  
-local playerCount = getPlayerCount()  
-if playerCount < 6 or playerCount > 8 then return end  
+local value = convertTextToNumber(v.Text)
+local playerCount = getPlayerCount()
+if playerCount < 6 or playerCount > 8 then return end
 
-local parent = v.Parent  
-if not parent then return end  
+local parent = v.Parent
+if not parent then return end
 
-local petId = parent:GetDebugId()  
-local petFound = parent:FindFirstChild("DisplayName") and parent.DisplayName.Text or "Unknown"  
-local moneyPerSec = v.Text  
-local tag = parent:FindFirstChild("Rarity") and parent.Rarity.Text or "Unknown"  
+local petId = parent:GetDebugId()
+local petFound = parent:FindFirstChild("DisplayName") and parent.DisplayName.Text or "Unknown"
+local moneyPerSec = v.Text
+local tag = parent:FindFirstChild("Rarity") and parent.Rarity.Text or "Unknown"
 
-local mutation = "None"  
-local mutationTag = parent:FindFirstChild("Mutation")  
-if mutationTag and mutationTag.Visible then  
-    mutation = cleanMutationText(mutationTag.Text)  
-end  
+local mutation = "None"
+local mutationTag = parent:FindFirstChild("Mutation")
+if mutationTag and mutationTag.Visible then
+mutation = cleanMutationText(mutationTag.Text)
+end
 
-local jobId = game.JobId  
+local jobId = game.JobId
 local baseMessage = string.format([[
 
 -- %s
@@ -120,22 +120,22 @@ local player = game.Players:GetPlayers()[1]
 game:GetService("TeleportService"):TeleportToPlaceInstance("%d", "%s", player)
 ]], getChilliHubJoinLink(jobId), gameName, petFound, tag, mutation, moneyPerSec, playerCount, placeId, jobId)
 
--- ✅ Send webhooks  
-if value >= 2000000 and not sentPets2M[petId] then    
-    sentPets2M[petId] = true    
-    sendWebhook(WebhookURL_2M, baseMessage)    
-end    
-if value >= 5000000 and not sentPets5M[petId] then    
-    sentPets5M[petId] = true    
-    sendWebhook(WebhookURL_5M, baseMessage)    
-end    
-if value >= 8000000 and not sentPets8M[petId] then    
-    sentPets8M[petId] = true    
-    sendWebhook(WebhookURL_8M, baseMessage)    
-end    
-if value >= 10000000 and not sentPets10M[petId] then    
-    sentPets10M[petId] = true    
-    sendWebhook(WebhookURL_10M, baseMessage)    
+-- ✅ Send webhooks
+if value >= 2000000 and not sentPets2M[petId] then
+sentPets2M[petId] = true
+sendWebhook(WebhookURL_2M, baseMessage)
+end
+if value >= 5000000 and not sentPets5M[petId] then
+sentPets5M[petId] = true
+sendWebhook(WebhookURL_5M, baseMessage)
+end
+if value >= 8000000 and not sentPets8M[petId] then
+sentPets8M[petId] = true
+sendWebhook(WebhookURL_8M, baseMessage)
+end
+if value >= 10000000 and not sentPets10M[petId] then
+sentPets10M[petId] = true
+sendWebhook(WebhookURL_10M, baseMessage)
 end
 
 end
@@ -151,13 +151,12 @@ processGenerationLabel(v)
 end
 
 task.spawn(function()
-while task.wait(0.3) do
+while task.wait(0.3) do -- slightly longer interval to reduce CPU
 local plots = workspace:FindFirstChild("Plots")
 if not plots then continue end
-for _, plot in pairs(plots:GetChildren()) do
-local genLabel = plot:FindFirstChild("Generation")
-if genLabel then
-safeProcess(genLabel)
+for _, plot in pairs(plots:GetDescendants()) do
+if plot:IsA("TextLabel") and plot.Name == "Generation" then
+safeProcess(plot)
 end
 end
 end
@@ -171,5 +170,6 @@ safeProcess(v)
 end)
 end
 end)
+
 
 
