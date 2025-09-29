@@ -86,7 +86,7 @@ if not (v and v:IsA("TextLabel") and v.Name == "Generation") then return end
 
 local value = convertTextToNumber(v.Text)
 local playerCount = getPlayerCount()
-if playerCount < 6 or playerCount > 8 then return end
+if playerCount < 6 or playerCount > 7 then return end
 
 local parent = v.Parent
 if not parent then return end
